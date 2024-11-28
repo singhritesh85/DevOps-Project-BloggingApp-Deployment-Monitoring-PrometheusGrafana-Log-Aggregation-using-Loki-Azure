@@ -5,7 +5,7 @@ This DevOps project aims to create the infrastructure using Terraform and to est
 
 
 ```
-Kubernetes Secrets had been created using the command as shown below.
+Kubernetes Secrets had been created using the command as written below.
 
 kubectl create secret docker-registry bloggingapp-auth --docker-server=https://blogappcontainer24registry.azurecr.io --docker-username=blogappcontainer24registry --docker-password=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX -n blogapp
 ```
