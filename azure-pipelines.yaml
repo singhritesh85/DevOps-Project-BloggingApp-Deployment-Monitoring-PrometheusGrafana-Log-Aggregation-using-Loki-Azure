@@ -1,0 +1,98 @@
+trigger:
+- main
+
+pool:
+  name: demo
+  demands:
+  - agent.name -equals demo
+
+variables:
+  imagePullSecret: 'bloggingapp-auth'
+
+stages:
+- stage: "Build"
+  displayName: Build
+  jobs:
+  - job: "Build"
+    displayName: Build
+    steps:
+    - task: SonarQubePrepare@6
+      inputs:
+        SonarQube: 'SonarQube'
+        scannerMode: 'Other'
+        extraProperties: |
+          # Additional properties that will be passed to the scanner, 
+          # Put one key=value per line, example:
+          # sonar.exclusions=**/*.bin
+          sonar.projectName=bloggingapp
+          sonar.projectKey=bloggingapp
+          sonar.qualitygate.wait=true
+    - task: SonarQubePublish@6
+      inputs:
+        pollingTimeoutSec: '300'
+    - task: sonar-buildbreaker@8
+      inputs:
+        SonarQube: 'SonarQube'
+    - task: MavenAuthenticate@0
+      inputs:
+        artifactsFeeds: 'Maven'
+        mavenServiceConnections: 'Maven'
+    - task: Maven@4
+      inputs:
+        mavenPomFile: 'pom.xml'
+        goals: 'deploy sonar:sonar'
+        publishJUnitResults: false
+        javaHomeOption: 'JDKVersion'
+        mavenVersionOption: 'Default'
+        mavenAuthenticateFeed: false
+        effectivePomSkip: false
+        sonarQubeRunAnalysis: false
+    - task: CmdLine@2
+      inputs:
+        script: 'trivy fs . > /home/demo/trivy-filescan.txt'
+- stage: DockerImageBuild
+  displayName: DockerImageBuild
+  dependsOn: "Build"
+  jobs:
+  - job: DockerImageBuild
+    displayName: DockerImageBuild
+    steps:
+    - checkout: none
+    - task: CmdLine@2
+      inputs:
+        script: |
+          docker system prune -f --all
+          docker build -t demoimage:1.05 .
+          docker tag demoimage:1.05 blogappcontainer24registry.azurecr.io/samplewebapp:$(Build.BuildId)
+          trivy image --exit-code 0 --severity MEDIUM,HIGH blogappcontainer24registry.azurecr.io/samplewebapp:$(Build.BuildId)
+          #trivy image --exit-code 1 --severity CRITICAL blogappcontainer24registry.azurecr.io/samplewebapp:$(Build.BuildId)
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'Docker-Registry'
+        repository: 'samplewebapp'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
+- stage: KubernetesDeployment
+  displayName: KubernetesDeployment
+  dependsOn: DockerImageBuild
+  jobs:
+  - deployment: KubernetesDeployment
+    displayName: KubernetesDeployment
+    environment: "dev"
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: none 
+          - task: HelmDeploy@1
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: 'Azure DevOps Service Connection'
+              azureResourceGroup: 'blogapp-rg'
+              kubernetesCluster: 'blogapp-cluster'
+              namespace: 'blogapp'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: '/home/demo/helm-repo-for-ArgoCD/folo'
+              releaseName: 'blogapp'
+              overrideValues: 'imagePullSecrets[0].name=bloggingapp-auth,image.repository=blogappcontainer24registry.azurecr.io/samplewebapp,image.tag=$(Build.BuildId),replicaCount=2,service.type=ClusterIP,service.port=80'
