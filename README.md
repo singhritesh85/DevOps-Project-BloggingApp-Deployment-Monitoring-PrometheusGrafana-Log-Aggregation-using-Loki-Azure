@@ -9,9 +9,9 @@ Kubernetes Secrets had been created using the command as shown below.
 
 kubectl create secret docker-registry bloggingapp-auth --docker-server=https://blogappcontainer24registry.azurecr.io --docker-username=blogappcontainer24registry --docker-password=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX -n blogapp
 ```
-
-
-
+<br><br/>
+<br><br/>
+<br><br/>
 ```
 Source Code:-  https://github.com/singhritesh85/Blogging-App.git
 
