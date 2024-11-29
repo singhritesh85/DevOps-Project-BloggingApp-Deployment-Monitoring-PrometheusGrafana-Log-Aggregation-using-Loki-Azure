@@ -158,7 +158,7 @@ resource "null_resource" "azurevm_loki" {
     password = "Password@#795"
   }
 
-  depends_on = [azurerm_linux_virtual_machine.azure_vm_loki, azurerm_network_interface.vnet_interface_loki[0], azurerm_network_interface.vnet_interface_loki[1], azurerm_network_interface.vnet_interface_loki[2], azurerm_storage_container.azure_sa_container]
+  depends_on = [azurerm_linux_virtual_machine.azure_vm_loki[0], azurerm_linux_virtual_machine.azure_vm_loki[1], azurerm_linux_virtual_machine.azure_vm_loki[2], azurerm_network_interface.vnet_interface_loki[0], azurerm_network_interface.vnet_interface_loki[1], azurerm_network_interface.vnet_interface_loki[2], azurerm_storage_container.azure_sa_container]
 
 }
 
