@@ -8,6 +8,10 @@ chown ritesh:ritesh /home/ritesh/.ssh -R;
 echo "ritesh  ALL=(ALL)  NOPASSWD:ALL" > /etc/sudoers.d/ritesh;
 chmod 440 /etc/sudoers.d/ritesh;
 
+########################## Install git, wget, zip, unzip and vim #############################
+
+yum install -y git wget vim zip unzip
+
 #################################### Loki ##############################################
 
 #useradd --system loki
